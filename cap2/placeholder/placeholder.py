@@ -49,9 +49,8 @@ def generate(self, image_format='PNG'):
 def placeholder(request, width, height):
     form = ImageForm({'height':height, 'widht':width})
     if form.is_valid():
-        height = form.cleaned_data['height']
-        width = form.cleaned_data['width']
-        return HttpResponse("OK")
+        image = form.generate()
+        return HttpResponse(image, content_type='image/png')
     else:
         return HttpResponseBadRequest("Valor invalido para imagem")
 
