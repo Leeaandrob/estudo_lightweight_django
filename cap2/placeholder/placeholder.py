@@ -8,6 +8,9 @@ from django.core.wsgi import get_wsgi_application
 from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
 
+from io import BytesIO
+from PIL import Image
+
 
 DEBUG = os.environ.get('DEBUG', 'on') == 'on'
 SECRET_KEY = os.environ.get('SECRET_KEY', '{{ secret_key }}')
@@ -33,6 +36,14 @@ def index(request):
 class ImageForm(forms.Form):
     height = forms.IntegerField(min_value=1, max_value=2000)
     width = forms.IntegerField(min_value=1, max_value=2000)
+
+
+def generate(self, image_format='PNG'):
+    height = self.cleaned_data['height']
+    widht = self.cleaned_data['width']
+    image = Image.new('RGB', (width, height))
+    content = BytesIO()
+    return content
 
 
 def placeholder(request, width, height):
