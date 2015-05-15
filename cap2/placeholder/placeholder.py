@@ -1,12 +1,15 @@
 #coding: utf-8
 import sys
 import os
+import hashlib
 
 from django.conf.urls import url
 from django.conf import settings
 from django.core.wsgi import get_wsgi_application
+from django.core.cache import cache
 from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
+from django.views.decorators.http import etag
 
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -32,6 +35,10 @@ settings.configure(
 def index(request):
     return HttpResponse('Hello World')
 
+def generate_etag(request, width, height):
+    content = 'Placeholder: {0} x {1}'.format(width, height)
+    return hashlib.sha1(content.enconde('utf-8')).hexdigest()
+
 
 class ImageForm(forms.Form):
     height = forms.IntegerField(min_value=1, max_value=2000)
@@ -41,21 +48,28 @@ class ImageForm(forms.Form):
     def generate(self, image_format='PNG'):
         height = self.cleaned_data['height']
         width = self.cleaned_data['width']
-        image = Image.new('RGB', (width, height))
-        draw = ImageDraw.Draw(image)
-        text = '{} x {}'.format(width, height)
-        textwidth, textheight = draw.textsize(text)
-        if textwidth < width and textheight < height:
-            texttop = (height - textheight) // 2
-            textleft = (width - textwidth) // 2
-            draw.text((textleft, texttop), text, fill=(
-                255, 255, 255))
+        key = '{}.{}.{}'.format(width, height, image_format)
+        content = cache.get(key)
+
+        if content is None:
+            image = Image.new('RGB', (width, height))
+            draw = ImageDraw.Draw(image)
+            text = '{} x {}'.format(width, height)
+            textwidth, textheight = draw.textsize(text)
+
+            if textwidth < width and textheight < height:
+                texttop = (height - textheight) //2
+                textleft = (width, textwidth) //2
+                draw.text((textleft, texttop), text, fill=(
+                    255,255,255))
+
         content = BytesIO()
         image.save(content, image_format)
         content.seek(0)
         return content
 
 
+@etag(generate_etag)
 def placeholder(request, width, height):
     form = ImageForm({'height':height, 'width':width})
     if form.is_valid():
