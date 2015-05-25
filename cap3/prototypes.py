@@ -1,6 +1,9 @@
 # coding: utf-8
+import os
 import sys
 from django.conf import settings
+
+BASE_DIR = os.path.dirname(__file__)
 
 settings.configure(
     DEBUG=True,
@@ -12,6 +15,9 @@ settings.configure(
         'sitebuilder',
     ),
     STATIC_URL='/static/',
+    SITE_PAGES_DIRECTORY=os.path.join(BASE_DIR, 'pages'),
+    SITE_OUTPUT_DIRECTORY=os.path.join(BASE_DIR, '_build'),
+    STATIC_ROOT=os.path.join(BASE_DIR, '_build', 'static'),
 )
 
 if __name__ == '__main__':
